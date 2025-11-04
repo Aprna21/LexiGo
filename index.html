@@ -1,1 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexiGo | Global Translation Tool</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash" aria-hidden="true">
+        <div class="splash-inner">
+            <div class="splash-logo">
+                <span class="splash-brand">LexiGo</span>
+                <i class="fas fa-globe-americas splash-globe" aria-hidden="true"></i>
+            </div>
+            <p class="splash-tagline">Translate • Transform • Connect</p>
+            <div class="splash-langs" role="presentation">
+                <span>हिन्दी</span>
+                <span>English</span>
+                <span>Español</span>
+                <span>Français</span>
+                <span>العربية</span>
+                <span>中文</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span>LexiGo</span>
+                <i class="fas fa-globe-americas"></i>
+            </div>
+            <div class="nav-controls">
+                <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        
+
+        <!-- Translation Interface -->
+        <section class="translation-section">
+            <div class="translation-container" data-motion-group>
+                <!-- Input Section -->
+                <div class="input-section" data-motion>
+                    <div class="section-header">
+                        <h3><i class="fas fa-edit"></i> Source Text</h3>
+                    </div>
+                    <div class="input-wrapper">
+                        <textarea id="inputText" placeholder="Enter text to translate..." maxlength="5000"></textarea>
+                        <div class="input-footer">
+                            <span class="char-count"><span id="charCount">0</span>/5000</span>
+                            <button class="clear-btn" id="clearInputBtn" title="Clear Text">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Language Selection -->
+                <div class="language-section" data-motion>
+                    <div class="language-selector">
+                        <label for="targetLanguage">
+                            <i class="fas fa-language"></i>
+                            Target Language
+                        </label>
+                        <select id="targetLanguage">
+                            <option value="">Select target language...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Output Section -->
+                <div class="output-section" data-motion>
+                    <div class="section-header">
+                        <h3><i class="fas fa-language"></i> Translated Text</h3>
+                        <div class="output-controls">
+                            <button class="clear-output-btn" id="clearOutputBtn" title="Clear Translation">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="copy-btn" id="copyBtn" title="Copy Translation">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="output-wrapper">
+                        <div id="outputText" class="output-text">
+                            <div class="placeholder">
+                                <i class="fas fa-arrow-up"></i>
+                                <p>Translation will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 LexiGo.</p>
+        </div>
+    </footer>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
 
