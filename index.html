@@ -13,7 +13,8 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="index.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -43,6 +44,10 @@
             <div class="nav-brand">
                 <span>LexiGo</span>
                 <i class="fas fa-globe-americas"></i>
+            </div>
+            <div class="nav-location" id="userLocation" title="Your location">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span class="location-text">Detecting location...</span>
             </div>
             <div class="nav-controls">
                 <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
@@ -131,7 +136,8 @@
 
     <script src="theme-toggle.js" defer></script>
     <script src="welcome.js" defer></script>
-    <script src="translator.js" defer></script>
+    <script src="location-tracker.js" defer></script>
+    <script src="index.js" defer></script>
 </body>
 </html>
 

@@ -37,7 +37,8 @@ class LexiGoTranslator {
     init() {
         this.populateLanguageDropdown();
         this.setupEventListeners();
-        this.loadSavedSettings();
+        // Always reset to default "Select target language..." on page load
+        this.resetLanguageSelection();
     }
 
     populateLanguageDropdown() {
@@ -87,7 +88,7 @@ class LexiGoTranslator {
         const targetLanguage = document.getElementById('targetLanguage');
         if (targetLanguage) {
             targetLanguage.addEventListener('change', () => {
-                this.saveSettings();
+                // Don't save settings - always show "Select target language..." on refresh
                 this.autoTranslate();
             });
         }
@@ -282,28 +283,18 @@ class LexiGoTranslator {
         }, 3000);
     }
 
-    saveSettings() {
-        const targetLanguage = document.getElementById('targetLanguage')?.value || '';
-        const settings = { targetLanguage };
-        localStorage.setItem('translatorSettings', JSON.stringify(settings));
-    }
-
-    loadSavedSettings() {
-        const savedSettings = localStorage.getItem('translatorSettings');
-        if (!savedSettings) return;
-
-        try {
-            const settings = JSON.parse(savedSettings);
-            if (settings.targetLanguage) {
-                const targetLanguage = document.getElementById('targetLanguage');
-                if (targetLanguage) {
-                    targetLanguage.value = settings.targetLanguage;
-                }
-            }
-        } catch (error) {
-            console.warn('Could not load translator settings', error);
+    resetLanguageSelection() {
+        // Always reset to default "Select target language..." option
+        const targetLanguage = document.getElementById('targetLanguage');
+        if (targetLanguage) {
+            targetLanguage.value = '';
         }
+        // Clear any saved settings from localStorage
+        localStorage.removeItem('translatorSettings');
     }
+
+    // Removed saveSettings() and loadSavedSettings() - language selection is not persisted
+    // This ensures "Select target language..." always shows after refresh
 
     logout() {
         localStorage.removeItem('lexigoAuth');
