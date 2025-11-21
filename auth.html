@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexiGo | Secure Access</title>
+    <script>
+        (function () {
+            const alreadySignedIn = localStorage.getItem('lexigoAuth') === 'true'
+                || sessionStorage.getItem('lexigoSession') === 'true';
+            if (alreadySignedIn) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-body">
+    <div id="splash" aria-hidden="true">
+        <div class="splash-inner">
+            <div class="splash-logo">
+                <span class="splash-brand">LexiGo</span>
+                <i class="fas fa-globe-americas splash-globe" aria-hidden="true"></i>
+            </div>
+            <p class="splash-tagline">Translate • Transform • Connect</p>
+            <div class="splash-langs" role="presentation">
+                <span>हिन्दी</span>
+                <span>English</span>
+                <span>Español</span>
+                <span>Français</span>
+                <span>العربية</span>
+                <span>中文</span>
+            </div>
+        </div>
+    </div>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span>LexiGo</span>
+                <i class="fas fa-globe-americas"></i>
+            </div>
+            <div class="nav-controls">
+                <button class="theme-toggle" id="authThemeToggle" title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="auth-page">
+        <div class="auth-card">
+            <div class="auth-tabs" role="tablist">
+                <button class="auth-tab active" data-mode="signin" id="signinTab" aria-selected="true">Sign In</button>
+                <button class="auth-tab" data-mode="signup" id="signupTab" aria-selected="false">Sign Up</button>
+            </div>
+
+            <div class="auth-content">
+                <p class="auth-greeting" id="signinGreeting">Welcome back to LexiGo</p>
+                <p class="auth-greeting hidden" id="signupGreeting">Create your LexiGo access</p>
+                <form id="signinForm" class="auth-form" autocomplete="off" novalidate>
+                    <label class="auth-label" for="signinEmail">Email</label>
+                    <input type="email" id="signinEmail" class="auth-input" placeholder="Enter your email" required>
+
+                    <label class="auth-label" for="signinPassword">Password</label>
+                    <div class="password-field">
+                        <input type="password" id="signinPassword" class="auth-input" placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle" data-target="signinPassword" aria-label="Show password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <button type="submit" class="primary-btn">Sign In</button>
+                    <button type="button" class="ghost-btn" id="goToSignup">Need an account?</button>
+                </form>
+
+                <form id="signupForm" class="auth-form hidden" autocomplete="off" novalidate>
+                    <label class="auth-label" for="signupName">Full Name</label>
+                    <input type="text" id="signupName" class="auth-input" placeholder="Enter your name" required>
+
+                    <label class="auth-label" for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" class="auth-input" placeholder="Enter your email" required>
+
+                    <label class="auth-label" for="signupPassword">Password</label>
+                    <div class="password-field">
+                        <input type="password" id="signupPassword" class="auth-input" placeholder="Enter your password" minlength="6" required>
+                        <button type="button" class="password-toggle" data-target="signupPassword" aria-label="Show password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <button type="submit" class="primary-btn">Create Account</button>
+                    <button type="button" class="ghost-btn" id="goToSignin">Back to Sign In</button>
+                </form>
+            </div>
+
+            <div class="status-message" id="statusMessage" role="status" aria-live="polite"></div>
+        </div>
+    </main>
+
+    <footer class="auth-footer">
+        <p>&copy; 2025 LexiGo. Secure access required.</p>
+    </footer>
+
+    <script src="theme-toggle.js" defer></script>
+    <script src="welcome.js" defer></script>
+    <script src="auth.js" defer></script>
+</body>
+</html>
+
