@@ -76,9 +76,14 @@
                         <textarea id="inputText" placeholder="Enter text to translate..." maxlength="5000"></textarea>
                         <div class="input-footer">
                             <span class="char-count"><span id="charCount">0</span>/5000</span>
-                            <button class="clear-btn" id="clearInputBtn" title="Clear Text">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            <div class="input-controls">
+                                <button class="voice-input-btn" id="voiceInputBtn" title="Voice Input">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button class="clear-btn" id="clearInputBtn" title="Clear Text">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -101,6 +106,9 @@
                     <div class="section-header">
                         <h3><i class="fas fa-language"></i> Translated Text</h3>
                         <div class="output-controls">
+                            <button class="voice-output-btn" id="voiceOutputBtn" title="Listen to Translation">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
                             <button class="clear-output-btn" id="clearOutputBtn" title="Clear Translation">
                                 <i class="fas fa-times"></i>
                             </button>

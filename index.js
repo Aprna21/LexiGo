@@ -31,6 +31,13 @@ class LexiGoTranslator {
             "yo": "Yoruba", "zu": "Zulu"
         };
 
+        // Speech recognition and synthesis
+        this.recognition = null;
+        this.isListening = false;
+        this.synthesis = window.speechSynthesis;
+        this.isSpeaking = false;
+        this.currentUtterance = null;
+
         this.init();
     }
 
@@ -77,6 +84,16 @@ class LexiGoTranslator {
             clearOutputBtn.addEventListener('click', () => this.clearOutput());
         }
 
+        const voiceInputBtn = document.getElementById('voiceInputBtn');
+        if (voiceInputBtn) {
+            voiceInputBtn.addEventListener('click', () => this.toggleVoiceInput());
+        }
+
+        const voiceOutputBtn = document.getElementById('voiceOutputBtn');
+        if (voiceOutputBtn) {
+            voiceOutputBtn.addEventListener('click', () => this.toggleVoiceOutput());
+        }
+
         const inputText = document.getElementById('inputText');
         if (inputText) {
             inputText.addEventListener('input', () => {
@@ -91,6 +108,24 @@ class LexiGoTranslator {
                 // Don't save settings - always show "Select target language..." on refresh
                 this.autoTranslate();
             });
+        }
+
+        // Initialize speech recognition
+        this.initSpeechRecognition();
+        
+        // Load voices for text-to-speech
+        this.loadVoices();
+        if (this.synthesis) {
+            this.synthesis.onvoiceschanged = () => this.loadVoices();
+        }
+    }
+
+    loadVoices() {
+        // This method is called to ensure voices are loaded
+        // Voices might not be available immediately on page load
+        if (this.synthesis) {
+            const voices = this.synthesis.getVoices();
+            // Voices are now loaded and available for text-to-speech
         }
     }
 
@@ -195,6 +230,20 @@ class LexiGoTranslator {
             outputText.classList.remove('has-content');
         }
 
+        // Stop any ongoing speech recognition
+        if (this.isListening && this.recognition) {
+            this.recognition.stop();
+            this.isListening = false;
+            this.updateVoiceInputButton(false);
+        }
+
+        // Stop any ongoing speech synthesis
+        if (this.isSpeaking && this.synthesis) {
+            this.synthesis.cancel();
+            this.isSpeaking = false;
+            this.updateVoiceOutputButton(false);
+        }
+
         this.updateCharCount();
         this.updateDetectedLanguage('auto');
         this.showToast('Input cleared!', 'success');
@@ -211,6 +260,14 @@ class LexiGoTranslator {
             </div>
         `;
         outputText.classList.remove('has-content');
+        
+        // Stop any ongoing speech synthesis
+        if (this.isSpeaking && this.synthesis) {
+            this.synthesis.cancel();
+            this.isSpeaking = false;
+            this.updateVoiceOutputButton(false);
+        }
+        
         this.showToast('Translation cleared!', 'success');
     }
 
@@ -304,10 +361,250 @@ class LexiGoTranslator {
             window.location.replace('auth.html');
         }, 600);
     }
+
+    initSpeechRecognition() {
+        // Check if browser supports speech recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            const voiceInputBtn = document.getElementById('voiceInputBtn');
+            if (voiceInputBtn) {
+                voiceInputBtn.style.display = 'none';
+            }
+            return;
+        }
+
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
+        
+        // Try to detect browser language or use English as default
+        const browserLang = navigator.language || navigator.userLanguage || 'en-US';
+        this.recognition.lang = browserLang;
+
+        this.recognition.onstart = () => {
+            this.isListening = true;
+            this.updateVoiceInputButton(true);
+            this.showToast('Listening... Speak now!', 'info');
+        };
+
+        this.recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const inputText = document.getElementById('inputText');
+            if (inputText) {
+                const currentText = inputText.value.trim();
+                // Append transcript with proper spacing
+                const newText = currentText ? `${currentText} ${transcript}` : transcript;
+                inputText.value = newText;
+                this.updateCharCount();
+                this.autoTranslate();
+                this.showToast('Voice input received!', 'success');
+            }
+        };
+
+        this.recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            this.isListening = false;
+            this.updateVoiceInputButton(false);
+            
+            let errorMessage = 'Voice input failed.';
+            if (event.error === 'no-speech') {
+                errorMessage = 'No speech detected. Please try again.';
+            } else if (event.error === 'audio-capture') {
+                errorMessage = 'No microphone found. Please check your microphone.';
+            } else if (event.error === 'not-allowed') {
+                errorMessage = 'Microphone permission denied. Please allow microphone access.';
+            }
+            this.showToast(errorMessage, 'error');
+        };
+
+        this.recognition.onend = () => {
+            this.isListening = false;
+            this.updateVoiceInputButton(false);
+        };
+    }
+
+    toggleVoiceInput() {
+        if (!this.recognition) {
+            this.showToast('Speech recognition is not supported in your browser.', 'error');
+            return;
+        }
+
+        if (this.isListening) {
+            this.recognition.stop();
+            this.isListening = false;
+            this.updateVoiceInputButton(false);
+            this.showToast('Voice input stopped.', 'info');
+        } else {
+            try {
+                // Update recognition language based on browser language
+                const browserLang = navigator.language || navigator.userLanguage || 'en-US';
+                this.recognition.lang = browserLang;
+                this.recognition.start();
+            } catch (error) {
+                if (error.name === 'InvalidStateError') {
+                    // Recognition is already running, stop and restart
+                    this.recognition.stop();
+                    setTimeout(() => {
+                        try {
+                            this.recognition.start();
+                        } catch (e) {
+                            this.showToast('Failed to start voice input.', 'error');
+                        }
+                    }, 100);
+                } else {
+                    this.showToast('Failed to start voice input. Please check microphone permissions.', 'error');
+                }
+            }
+        }
+    }
+
+    updateVoiceInputButton(isListening) {
+        const voiceInputBtn = document.getElementById('voiceInputBtn');
+        if (!voiceInputBtn) return;
+
+        const icon = voiceInputBtn.querySelector('i');
+        if (isListening) {
+            voiceInputBtn.classList.add('listening');
+            if (icon) icon.className = 'fas fa-microphone-slash';
+            voiceInputBtn.title = 'Stop Listening';
+        } else {
+            voiceInputBtn.classList.remove('listening');
+            if (icon) icon.className = 'fas fa-microphone';
+            voiceInputBtn.title = 'Voice Input';
+        }
+    }
+
+    toggleVoiceOutput() {
+        const outputText = document.getElementById('outputText');
+        if (!outputText) return;
+
+        const text = outputText.textContent.trim();
+        
+        // Check if there's valid translated text
+        if (!text || 
+            text.includes('Translation will appear here') || 
+            text.includes('Translation failed') ||
+            text.includes('Please check your internet')) {
+            this.showToast('No translation to read!', 'error');
+            return;
+        }
+
+        if (this.isSpeaking) {
+            // Stop speaking
+            this.synthesis.cancel();
+            this.isSpeaking = false;
+            this.updateVoiceOutputButton(false);
+            this.showToast('Stopped reading.', 'info');
+        } else {
+            // Start speaking
+            this.speakText(text);
+        }
+    }
+
+    speakText(text) {
+        if (!this.synthesis) {
+            this.showToast('Text-to-speech is not supported in your browser.', 'error');
+            return;
+        }
+
+        // Cancel any ongoing speech
+        this.synthesis.cancel();
+
+        // Get the target language to set appropriate voice
+        const targetLanguage = document.getElementById('targetLanguage')?.value;
+        const langCode = targetLanguage || 'en';
+
+        const startSpeaking = () => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langCode;
+            utterance.rate = 0.9; // Slightly slower for better comprehension
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+
+            // Try to find a voice that matches the target language
+            const voices = this.synthesis.getVoices();
+            if (voices.length > 0) {
+                const langPrefix = langCode.split('-')[0];
+                const preferredVoice = voices.find(voice => 
+                    voice.lang.startsWith(langCode) || 
+                    voice.lang.startsWith(langPrefix)
+                ) || voices.find(voice => voice.lang.includes(langPrefix));
+                
+                if (preferredVoice) {
+                    utterance.voice = preferredVoice;
+                }
+            }
+
+            utterance.onstart = () => {
+                this.isSpeaking = true;
+                this.currentUtterance = utterance;
+                this.updateVoiceOutputButton(true);
+                this.showToast('Reading translation...', 'info');
+            };
+
+            utterance.onend = () => {
+                this.isSpeaking = false;
+                this.currentUtterance = null;
+                this.updateVoiceOutputButton(false);
+            };
+
+            utterance.onerror = (event) => {
+                console.error('Speech synthesis error:', event);
+                this.isSpeaking = false;
+                this.currentUtterance = null;
+                this.updateVoiceOutputButton(false);
+                this.showToast('Failed to read translation.', 'error');
+            };
+
+            this.synthesis.speak(utterance);
+        };
+
+        // Wait for voices to load if needed
+        const voices = this.synthesis.getVoices();
+        if (voices.length === 0) {
+            // Voices not loaded yet, wait a bit
+            setTimeout(startSpeaking, 100);
+        } else {
+            startSpeaking();
+        }
+    }
+
+    updateVoiceOutputButton(isSpeaking) {
+        const voiceOutputBtn = document.getElementById('voiceOutputBtn');
+        if (!voiceOutputBtn) return;
+
+        const icon = voiceOutputBtn.querySelector('i');
+        if (isSpeaking) {
+            voiceOutputBtn.classList.add('speaking');
+            if (icon) icon.className = 'fas fa-stop';
+            voiceOutputBtn.title = 'Stop Reading';
+        } else {
+            voiceOutputBtn.classList.remove('speaking');
+            if (icon) icon.className = 'fas fa-volume-up';
+            voiceOutputBtn.title = 'Listen to Translation';
+        }
+    }
 }
 
+let translatorInstance = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-    new LexiGoTranslator();
+    translatorInstance = new LexiGoTranslator();
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (translatorInstance) {
+        // Stop speech recognition
+        if (translatorInstance.isListening && translatorInstance.recognition) {
+            translatorInstance.recognition.stop();
+        }
+        // Stop speech synthesis
+        if (translatorInstance.isSpeaking && translatorInstance.synthesis) {
+            translatorInstance.synthesis.cancel();
+        }
+    }
 });
 
 const style = document.createElement('style');
