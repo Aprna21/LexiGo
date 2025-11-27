@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexiGo | Translation History</title>
+    <script>
+        (function () {
+            const hasPersistentSession = localStorage.getItem('lexigoAuth') === 'true';
+            const hasActiveSession = sessionStorage.getItem('lexigoSession') === 'true';
+            if (!hasPersistentSession && !hasActiveSession) {
+                window.location.replace('auth.html');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="history.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="history-page-body">
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span>LexiGo</span>
+                <i class="fas fa-globe-americas"></i>
+            </div>
+            <div class="nav-location" id="userLocation" title="Your location">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span class="location-text">Detecting location...</span>
+            </div>
+            <div class="nav-controls">
+                <a class="history-link active" href="history.html" title="Translation history">
+                    <i class="fas fa-clock-rotate-left"></i>
+                </a>
+                <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="logout-btn" id="logoutBtn" title="Sign out of LexiGo">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="history-main">
+        <header class="history-hero">
+            <div class="hero-content">
+                <p class="eyebrow">Saved locally • Private to you</p>
+                <h1>Translation History</h1>
+                <p class="subtitle">Review, revisit, or reuse any translation you made on this device.</p>
+            </div>
+            <div class="history-hero-actions">
+                <a href="index.html" class="back-to-app">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to translator
+                </a>
+                <button id="clearFullHistoryBtn" class="history-danger-btn">
+                    <i class="fas fa-trash"></i>
+                    Clear history
+                </button>
+            </div>
+        </header>
+
+        <section class="history-filters">
+            <div class="filter-group">
+                <label for="languageFilter">
+                    <i class="fas fa-filter"></i>
+                    Filter by target language
+                </label>
+                <select id="languageFilter">
+                    <option value="all">All languages</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="searchHistory">
+                    <i class="fas fa-magnifying-glass"></i>
+                    Search text
+                </label>
+                <input type="search" id="searchHistory" placeholder="Search in saved translations...">
+            </div>
+        </section>
+
+        <section id="fullHistoryList" class="history-cards">
+            <div class="history-empty">
+                <i class="fas fa-book-open"></i>
+                <p>No translations saved yet.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 LexiGo.</p>
+        </div>
+    </footer>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="theme-toggle.js" defer></script>
+    <script src="welcome.js" defer></script>
+    <script src="location-tracker.js" defer></script>
+    <script src="history.js" defer></script>
+</body>
+</html>
+

@@ -37,6 +37,9 @@ class LexiGoTranslator {
         this.synthesis = window.speechSynthesis;
         this.isSpeaking = false;
         this.currentUtterance = null;
+        this.historyKey = 'lexigoHistory';
+        this.historyLimit = 25;
+        this.historyPreviewLimit = 5;
 
         this.init();
     }
@@ -46,6 +49,7 @@ class LexiGoTranslator {
         this.setupEventListeners();
         // Always reset to default "Select target language..." on page load
         this.resetLanguageSelection();
+        this.renderHistoryPreview();
     }
 
     populateLanguageDropdown() {
@@ -110,6 +114,11 @@ class LexiGoTranslator {
             });
         }
 
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+        if (clearHistoryBtn) {
+            clearHistoryBtn.addEventListener('click', () => this.clearHistory());
+        }
+
         // Initialize speech recognition
         this.initSpeechRecognition();
         
@@ -171,6 +180,12 @@ class LexiGoTranslator {
 
             const sourceLang = data[2] || 'auto';
             this.updateDetectedLanguage(sourceLang);
+            this.saveTranslationToHistory({
+                sourceText: text,
+                translatedText,
+                targetLanguage: lang,
+                detectedLanguage: sourceLang
+            });
         } catch (error) {
             console.error('Translation error:', error);
             outputText.innerHTML = `
@@ -584,6 +599,105 @@ class LexiGoTranslator {
             if (icon) icon.className = 'fas fa-volume-up';
             voiceOutputBtn.title = 'Listen to Translation';
         }
+    }
+
+    loadHistory() {
+        try {
+            const saved = localStorage.getItem(this.historyKey);
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.error('Failed to parse history:', error);
+            return [];
+        }
+    }
+
+    saveTranslationToHistory(entry) {
+        if (!entry?.sourceText || !entry?.translatedText) return;
+
+        const history = this.loadHistory()
+            .filter(item => item.sourceText !== entry.sourceText || item.translatedText !== entry.translatedText);
+
+        const record = {
+            id: window.crypto?.randomUUID ? window.crypto.randomUUID() : `hist-${Date.now()}`,
+            sourceText: entry.sourceText,
+            translatedText: entry.translatedText,
+            targetLanguage: entry.targetLanguage,
+            detectedLanguage: entry.detectedLanguage || 'auto',
+            timestamp: new Date().toISOString()
+        };
+
+        history.unshift(record);
+        if (history.length > this.historyLimit) {
+            history.length = this.historyLimit;
+        }
+
+        localStorage.setItem(this.historyKey, JSON.stringify(history));
+        this.renderHistoryPreview();
+    }
+
+    clearHistory() {
+        localStorage.removeItem(this.historyKey);
+        this.renderHistoryPreview();
+        this.showToast('Translation history cleared.', 'success');
+    }
+
+    renderHistoryPreview() {
+        const historyList = document.getElementById('historyList');
+        if (!historyList) return;
+
+        const history = this.loadHistory();
+        if (!history.length) {
+            historyList.innerHTML = `
+                <div class="history-empty">
+                    <i class="fas fa-book-open"></i>
+                    <p>No translations saved yet.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const preview = history.slice(0, this.historyPreviewLimit)
+            .map(item => `
+                <article class="history-item">
+                    <div class="history-text">
+                        <span>Source</span>
+                        <p>${this.escapeHtml(item.sourceText)}</p>
+                    </div>
+                    <div class="history-text">
+                        <span>Translation</span>
+                        <p>${this.escapeHtml(item.translatedText)}</p>
+                    </div>
+                    <div class="history-meta">
+                        <div>
+                            <strong>${this.getLanguageName(item.detectedLanguage)}</strong>
+                            <span> → ${this.getLanguageName(item.targetLanguage)}</span>
+                        </div>
+                        <div class="history-timestamp">${this.formatTimestamp(item.timestamp)}</div>
+                    </div>
+                </article>
+            `).join('');
+
+        historyList.innerHTML = preview;
+    }
+
+    getLanguageName(code) {
+        if (!code || code === 'auto') return 'Auto';
+        return this.languages[code] || code;
+    }
+
+    formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toLocaleString(undefined, {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 
