@@ -271,6 +271,39 @@ textarea::placeholder {
     font-style: italic;
 }
 
+/* Warning states for textarea based on character count */
+textarea.warning {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.05);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1), var(--shadow-sm);
+}
+
+textarea.warning:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15), var(--shadow-md);
+}
+
+textarea.danger {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1), var(--shadow-sm);
+    animation: warningPulse 2s ease-in-out infinite;
+}
+
+textarea.danger:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2), var(--shadow-md);
+}
+
+@keyframes warningPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1), var(--shadow-sm);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.15), var(--shadow-md);
+    }
+}
+
 .input-footer {
     display: flex;
     justify-content: space-between;

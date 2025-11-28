@@ -318,11 +318,19 @@ class LexiGoTranslator {
         const count = inputText.value.length;
         charCount.textContent = count;
 
+        // Remove all warning classes first
+        inputText.classList.remove('warning', 'danger');
+
         if (count > 4500) {
+            // Red danger state - 4500+ characters
             charCount.style.color = '#ef4444';
+            inputText.classList.add('danger');
         } else if (count > 4000) {
+            // Yellow warning state - 4000+ characters
             charCount.style.color = '#f59e0b';
+            inputText.classList.add('warning');
         } else {
+            // Normal state
             charCount.style.color = 'var(--text-muted)';
         }
     }
