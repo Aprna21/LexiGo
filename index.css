@@ -574,6 +574,30 @@ select:hover {
     transform: translateY(0);
 }
 
+.save-vocab-btn {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    box-shadow: var(--shadow-sm);
+    color: var(--accent-color);
+}
+
+.save-vocab-btn:hover {
+    background: var(--surface-elevated);
+    border-color: var(--accent-color);
+    color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
 
 /* Enhanced Features Section */
 .features-section {
@@ -707,38 +731,6 @@ select:hover {
 
 [data-theme="dark"] .feature-card:hover h3 {
     color: #ff6b6b;
-}
-
-/* Footer for Main Page */
-.footer {
-    background: var(--gradient-surface);
-    border-top: 1px solid var(--border-light);
-    padding: var(--spacing-2xl) 0;
-    text-align: center;
-    margin-top: var(--spacing-3xl);
-    position: relative;
-}
-
-.footer::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: var(--gradient-primary);
-}
-
-.footer-content {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0 var(--spacing-lg);
-}
-
-.footer-content p {
-    color: var(--text-muted);
-    font-weight: 500;
-    font-size: 0.875rem;
 }
 
 /* Main Page Responsive Design */

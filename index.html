@@ -53,6 +53,9 @@
                 <a class="history-link" href="history.html" title="View translation history">
                     <i class="fas fa-clock-rotate-left"></i>
                 </a>
+                <a class="vocab-link" href="vocab.html" title="My Words notebook">
+                    <i class="fas fa-book"></i>
+                </a>
                 <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -118,6 +121,9 @@
                             <button class="copy-btn" id="copyBtn" title="Copy Translation">
                                 <i class="fas fa-copy"></i>
                             </button>
+                            <button class="save-vocab-btn" id="saveVocabBtn" title="Save to My Words">
+                                <i class="fas fa-bookmark"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="output-wrapper">
@@ -134,12 +140,7 @@
 
     </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2025 LexiGo.</p>
-        </div>
-    </footer>
+    <div id="globalFooter"></div>
 
     <!-- Toast Notifications -->
     <div class="toast-container" id="toastContainer"></div>
@@ -147,6 +148,7 @@
     <script src="theme-toggle.js" defer></script>
     <script src="welcome.js" defer></script>
     <script src="location-tracker.js" defer></script>
+    <script src="footer.js" defer></script>
     <script src="index.js" defer></script>
 </body>
 </html>

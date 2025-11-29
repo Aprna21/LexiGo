@@ -12,16 +12,17 @@
 }
 
 .history-hero {
-    background: var(--gradient-surface);
-    border-radius: var(--radius-2xl);
-    padding: var(--spacing-2xl);
-    border: 1px solid var(--border-light);
-    box-shadow: var(--shadow-lg);
+    /* Container hataya: simple heading + actions row */
+    background: transparent;
+    border-radius: 0;
+    padding: 0 0 var(--spacing-lg);
+    border: none;
+    box-shadow: none;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-xl);
+    gap: var(--spacing-md);
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end;
 }
 
 .hero-content h1 {
@@ -282,10 +283,6 @@
 @media (max-width: 768px) {
     .history-main {
         padding: var(--spacing-xl) var(--spacing-md) var(--spacing-3xl);
-    }
-
-    .history-hero {
-        padding: var(--spacing-xl);
     }
 
     .history-card .history-body {

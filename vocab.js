@@ -28,154 +28,106 @@ const LEXIGO_LANGUAGES = {
     "yo": "Yoruba", "zu": "Zulu"
 };
 
-class LexiGoHistory {
+class LexiGoVocab {
     constructor() {
-        this.historyKey = 'lexigoHistory';
+        this.vocabKey = 'lexigoVocab';
         this.languages = LEXIGO_LANGUAGES;
-        this.historyListEl = document.getElementById('fullHistoryList');
-        this.logoutBtn = document.getElementById('logoutBtn');
-        this.languageFilter = document.getElementById('languageFilter');
-        this.searchInput = document.getElementById('searchHistory');
-        this.clearBtn = document.getElementById('clearFullHistoryBtn');
+        this.vocabListEl = document.getElementById('vocabList');
+        this.clearBtn = document.getElementById('clearVocabBtn');
         this.toastContainer = document.getElementById('toastContainer');
+        this.logoutBtn = document.getElementById('logoutBtn');
         this.init();
     }
 
     init() {
-        this.populateLanguageFilter();
         this.attachEvents();
         this.render();
     }
 
     attachEvents() {
-        this.languageFilter?.addEventListener('change', () => this.render());
-        this.searchInput?.addEventListener('input', () => this.render());
-        this.clearBtn?.addEventListener('click', () => this.clearHistory());
+        this.clearBtn?.addEventListener('click', () => this.clearVocab());
 
-        // Enable logout from history page as well
-        this.logoutBtn?.addEventListener('click', () => this.logout());
-
-        this.historyListEl?.addEventListener('click', (event) => {
+        this.vocabListEl?.addEventListener('click', (event) => {
             const button = event.target.closest('button[data-action]');
             if (!button) return;
 
-            const id = button.dataset.id;
             const action = button.dataset.action;
-
             if (action === 'copy-source') {
                 this.copyText(button.dataset.text, 'Source text copied.');
             } else if (action === 'copy-translation') {
                 this.copyText(button.dataset.text, 'Translated text copied.');
             } else if (action === 'delete-entry') {
-                this.deleteEntry(id);
+                this.deleteEntry(button.dataset.id);
             }
         });
+
+        this.logoutBtn?.addEventListener('click', () => this.logout());
     }
 
-    logout() {
-        // Mirror logout behavior from main translator page
-        localStorage.removeItem('lexigoAuth');
-        sessionStorage.removeItem('lexigoSession');
-        this.showToast('Signed out securely.', 'success');
-        setTimeout(() => {
-            window.location.replace('auth.html');
-        }, 600);
-    }
-
-    populateLanguageFilter() {
-        if (!this.languageFilter) return;
-        const fragment = document.createDocumentFragment();
-        Object.entries(this.languages)
-            .sort(([, a], [, b]) => a.localeCompare(b))
-            .forEach(([code, name]) => {
-                const option = document.createElement('option');
-                option.value = code;
-                option.textContent = name;
-                fragment.appendChild(option);
-            });
-        this.languageFilter.appendChild(fragment);
-    }
-
-    getHistory() {
+    getVocab() {
         try {
-            return JSON.parse(localStorage.getItem(this.historyKey)) || [];
+            return JSON.parse(localStorage.getItem(this.vocabKey)) || [];
         } catch (error) {
-            console.error('Failed to parse history:', error);
+            console.error('Failed to parse vocab:', error);
             return [];
         }
     }
 
-    setHistory(history) {
-        localStorage.setItem(this.historyKey, JSON.stringify(history));
+    setVocab(vocab) {
+        localStorage.setItem(this.vocabKey, JSON.stringify(vocab));
     }
 
     render() {
-        if (!this.historyListEl) return;
-        const filterValue = this.languageFilter?.value || 'all';
-        const searchValue = (this.searchInput?.value || '').toLowerCase();
-        const history = this.getHistory().filter(entry => {
-            const matchesLanguage = filterValue === 'all' || entry.targetLanguage === filterValue;
-            const combinedText = `${entry.sourceText} ${entry.translatedText}`.toLowerCase();
-            const matchesSearch = searchValue === '' || combinedText.includes(searchValue);
-            return matchesLanguage && matchesSearch;
-        });
+        if (!this.vocabListEl) return;
+        const vocab = this.getVocab();
 
-        if (!history.length) {
-            this.historyListEl.innerHTML = `
-                <div class="history-empty">
+        if (!vocab.length) {
+            this.vocabListEl.innerHTML = `
+                <div class="vocab-empty">
                     <i class="fas fa-book-open"></i>
-                    <p>No translations match your filters.</p>
+                    <p>No words saved yet.</p>
                 </div>
             `;
             return;
         }
 
-        this.historyListEl.innerHTML = history.map(entry => `
-            <article class="history-card">
-                <header>
-                    <h2>${this.getLanguageName(entry.detectedLanguage)} <span>→ ${this.getLanguageName(entry.targetLanguage)}</span></h2>
-                    <time class="history-timestamp">${this.formatTimestamp(entry.timestamp)}</time>
-                </header>
-                <div class="history-body">
-                    <div class="text-block">
-                        <label>Source</label>
-                        <p>${this.escapeHtml(entry.sourceText)}</p>
-                    </div>
-                    <div class="text-block">
-                        <label>Translation</label>
-                        <p>${this.escapeHtml(entry.translatedText)}</p>
-                    </div>
+        this.vocabListEl.innerHTML = vocab.map(item => `
+            <article class="vocab-item">
+                <div class="vocab-word">
+                    <h4>${this.escapeHtml(item.translatedText)}</h4>
+                    <p>${this.escapeHtml(item.sourceText)}</p>
                 </div>
-                <footer>
-                    <span>Saved locally on this device</span>
-                    <div class="history-card-actions">
-                        <button data-action="copy-source" data-text="${this.escapeAttr(entry.sourceText)}">
-                            <i class="fas fa-copy"></i> Copy Source
-                        </button>
-                        <button data-action="copy-translation" data-text="${this.escapeAttr(entry.translatedText)}">
-                            <i class="fas fa-copy"></i> Copy Translation
-                        </button>
-                        <button data-action="delete-entry" data-id="${entry.id}">
-                            <i class="fas fa-trash"></i> Remove
-                        </button>
-                    </div>
-                </footer>
+                <div class="vocab-meta">
+                    <span>${this.getLanguageName(item.detectedLanguage)} → ${this.getLanguageName(item.targetLanguage)}</span>
+                    <span class="vocab-time">${this.formatTimestamp(item.timestamp)}</span>
+                </div>
+                <div class="vocab-actions">
+                    <button type="button" data-action="copy-source" data-text="${this.escapeAttr(item.sourceText)}" title="Copy source">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button type="button" data-action="copy-translation" data-text="${this.escapeAttr(item.translatedText)}" title="Copy translation">
+                        <i class="fas fa-language"></i>
+                    </button>
+                    <button type="button" data-action="delete-entry" data-id="${item.id}" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </article>
         `).join('');
     }
 
-    deleteEntry(id) {
-        if (!id) return;
-        const updated = this.getHistory().filter(entry => entry.id !== id);
-        this.setHistory(updated);
+    clearVocab() {
+        localStorage.removeItem(this.vocabKey);
         this.render();
-        this.showToast('Entry removed from history.', 'success');
+        this.showToast('Notebook cleared.', 'success');
     }
 
-    clearHistory() {
-        localStorage.removeItem(this.historyKey);
+    deleteEntry(id) {
+        if (!id) return;
+        const updated = this.getVocab().filter(entry => entry.id !== id);
+        this.setVocab(updated);
         this.render();
-        this.showToast('All translations removed.', 'success');
+        this.showToast('Word removed from notebook.', 'success');
     }
 
     copyText(text, successMessage) {
@@ -229,7 +181,8 @@ class LexiGoHistory {
     }
 
     escapeAttr(text) {
-        return text.replace(/&/g, '&amp;')
+        return String(text)
+            .replace(/&/g, '&amp;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;')
             .replace(/</g, '&lt;')
@@ -255,9 +208,19 @@ class LexiGoHistory {
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
+
+    logout() {
+        localStorage.removeItem('lexigoAuth');
+        sessionStorage.removeItem('lexigoSession');
+        this.showToast('Signed out securely.', 'success');
+        setTimeout(() => {
+            window.location.replace('auth.html');
+        }, 600);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new LexiGoHistory();
+    new LexiGoVocab();
 });
+
 

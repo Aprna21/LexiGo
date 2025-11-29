@@ -40,6 +40,9 @@ class LexiGoTranslator {
         this.historyKey = 'lexigoHistory';
         this.historyLimit = 25;
         this.historyPreviewLimit = 5;
+        this.vocabKey = 'lexigoVocab';
+        this.vocabLimit = 100;
+        this.lastDetectedLanguage = 'auto';
 
         this.init();
     }
@@ -50,6 +53,7 @@ class LexiGoTranslator {
         // Always reset to default "Select target language..." on page load
         this.resetLanguageSelection();
         this.renderHistoryPreview();
+        this.renderVocabPreview();
     }
 
     populateLanguageDropdown() {
@@ -119,6 +123,33 @@ class LexiGoTranslator {
             clearHistoryBtn.addEventListener('click', () => this.clearHistory());
         }
 
+        const saveVocabBtn = document.getElementById('saveVocabBtn');
+        if (saveVocabBtn) {
+            saveVocabBtn.addEventListener('click', () => this.handleSaveToVocab());
+        }
+
+        const clearVocabBtn = document.getElementById('clearVocabBtn');
+        if (clearVocabBtn) {
+            clearVocabBtn.addEventListener('click', () => this.clearVocab());
+        }
+
+        const vocabList = document.getElementById('vocabList');
+        if (vocabList) {
+            vocabList.addEventListener('click', (event) => {
+                const button = event.target.closest('button[data-action]');
+                if (!button) return;
+
+                const action = button.dataset.action;
+                if (action === 'copy-source') {
+                    this.copyArbitraryText(button.dataset.text, 'Source text copied to clipboard!');
+                } else if (action === 'copy-translation') {
+                    this.copyArbitraryText(button.dataset.text, 'Translated text copied to clipboard!');
+                } else if (action === 'delete-entry') {
+                    this.deleteVocabEntry(button.dataset.id);
+                }
+            });
+        }
+
         // Initialize speech recognition
         this.initSpeechRecognition();
         
@@ -179,6 +210,7 @@ class LexiGoTranslator {
             outputText.classList.add('has-content');
 
             const sourceLang = data[2] || 'auto';
+            this.lastDetectedLanguage = sourceLang;
             this.updateDetectedLanguage(sourceLang);
             this.saveTranslationToHistory({
                 sourceText: text,
@@ -306,6 +338,36 @@ class LexiGoTranslator {
             document.execCommand('copy');
             document.body.removeChild(textArea);
             this.showToast('Translation copied to clipboard!', 'success');
+        }
+    }
+
+    copyArbitraryText(text, successMessage = 'Copied to clipboard!') {
+        if (!text) {
+            this.showToast('Nothing to copy!', 'error');
+            return;
+        }
+
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text)
+                .then(() => this.showToast(successMessage, 'success'))
+                .catch(() => this.fallbackCopyText(text, successMessage));
+        } else {
+            this.fallbackCopyText(text, successMessage);
+        }
+    }
+
+    fallbackCopyText(text, successMessage) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            this.showToast(successMessage, 'success');
+        } catch (error) {
+            this.showToast('Copy failed. Please copy manually.', 'error');
+        } finally {
+            document.body.removeChild(textArea);
         }
     }
 
@@ -649,6 +711,81 @@ class LexiGoTranslator {
         this.showToast('Translation history cleared.', 'success');
     }
 
+    loadVocab() {
+        try {
+            const saved = localStorage.getItem(this.vocabKey);
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.error('Failed to parse vocabulary:', error);
+            return [];
+        }
+    }
+
+    saveToVocab(entry) {
+        if (!entry?.sourceText || !entry?.translatedText) return;
+
+        let vocab = this.loadVocab()
+            .filter(item => item.sourceText !== entry.sourceText || item.translatedText !== entry.translatedText);
+
+        const record = {
+            id: window.crypto?.randomUUID ? window.crypto.randomUUID() : `vocab-${Date.now()}`,
+            sourceText: entry.sourceText,
+            translatedText: entry.translatedText,
+            targetLanguage: entry.targetLanguage,
+            detectedLanguage: entry.detectedLanguage || 'auto',
+            timestamp: new Date().toISOString()
+        };
+
+        vocab.unshift(record);
+        if (vocab.length > this.vocabLimit) {
+            vocab.length = this.vocabLimit;
+        }
+
+        localStorage.setItem(this.vocabKey, JSON.stringify(vocab));
+        this.renderVocabPreview();
+    }
+
+    clearVocab() {
+        localStorage.removeItem(this.vocabKey);
+        this.renderVocabPreview();
+        this.showToast('Notebook cleared.', 'success');
+    }
+
+    deleteVocabEntry(id) {
+        if (!id) return;
+        const updated = this.loadVocab().filter(entry => entry.id !== id);
+        localStorage.setItem(this.vocabKey, JSON.stringify(updated));
+        this.renderVocabPreview();
+        this.showToast('Word removed from notebook.', 'success');
+    }
+
+    handleSaveToVocab() {
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const targetLanguage = document.getElementById('targetLanguage');
+
+        const source = inputText?.value.trim() || '';
+        const translated = outputText?.textContent.trim() || '';
+
+        if (!source || !translated ||
+            translated.includes('Translation will appear here') ||
+            translated.includes('Translation failed') ||
+            translated.includes('Please check your internet')) {
+            this.showToast('Nothing to save. Please translate some text first.', 'error');
+            return;
+        }
+
+        const entry = {
+            sourceText: source,
+            translatedText: translated,
+            targetLanguage: targetLanguage?.value || '',
+            detectedLanguage: this.lastDetectedLanguage || 'auto'
+        };
+
+        this.saveToVocab(entry);
+        this.showToast('Saved to My Words.', 'success');
+    }
+
     renderHistoryPreview() {
         const historyList = document.getElementById('historyList');
         if (!historyList) return;
@@ -688,6 +825,48 @@ class LexiGoTranslator {
         historyList.innerHTML = preview;
     }
 
+    renderVocabPreview() {
+        const vocabList = document.getElementById('vocabList');
+        if (!vocabList) return;
+
+        const vocab = this.loadVocab();
+        if (!vocab.length) {
+            vocabList.innerHTML = `
+                <div class="vocab-empty">
+                    <i class="fas fa-book-open"></i>
+                    <p>No words saved yet.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const markup = vocab.map(item => `
+            <article class="vocab-item">
+                <div class="vocab-word">
+                    <h4>${this.escapeHtml(item.translatedText)}</h4>
+                    <p>${this.escapeHtml(item.sourceText)}</p>
+                </div>
+                <div class="vocab-meta">
+                    <span>${this.getLanguageName(item.detectedLanguage)} → ${this.getLanguageName(item.targetLanguage)}</span>
+                    <span class="vocab-time">${this.formatTimestamp(item.timestamp)}</span>
+                </div>
+                <div class="vocab-actions">
+                    <button type="button" data-action="copy-source" data-text="${this.escapeAttr(item.sourceText)}" title="Copy source">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button type="button" data-action="copy-translation" data-text="${this.escapeAttr(item.translatedText)}" title="Copy translation">
+                        <i class="fas fa-language"></i>
+                    </button>
+                    <button type="button" data-action="delete-entry" data-id="${item.id}" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </article>
+        `).join('');
+
+        vocabList.innerHTML = markup;
+    }
+
     getLanguageName(code) {
         if (!code || code === 'auto') return 'Auto';
         return this.languages[code] || code;
@@ -706,6 +885,15 @@ class LexiGoTranslator {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    escapeAttr(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
     }
 }
 

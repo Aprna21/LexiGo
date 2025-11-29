@@ -314,13 +314,6 @@
     background: rgba(248, 113, 113, 0.1);
 }
 
-/* Auth Footer */
-.auth-footer {
-    text-align: center;
-    padding: var(--spacing-md);
-    color: var(--text-muted);
-}
-
 /* Light Theme Overrides for Auth */
 [data-theme="light"] .auth-card::before,
 [data-theme="light"] .auth-card::after {
