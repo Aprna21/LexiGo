@@ -270,8 +270,8 @@ body::after {
     padding: var(--spacing-sm) var(--spacing-md);
     background: rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-full);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     font-size: 0.875rem;
     color: var(--text-secondary);
