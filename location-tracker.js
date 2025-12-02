@@ -41,14 +41,22 @@ class LocationTracker {
         }
 
         try {
-            // Try multiple free IP geolocation APIs
-            const location = await this.tryFetchLocation();
+            // 1) Try accurate browser geolocation first (with user permission)
+            const browserLocation = await this.getBrowserLocation();
+            if (browserLocation) {
+                this.cachedLocation = browserLocation;
+                sessionStorage.setItem('lexigoLocation', JSON.stringify(browserLocation));
+                this.displayLocation(browserLocation);
+                return;
+            }
+
+            // 2) Fallback to IP-based lookup (approximate)
+            const ipLocation = await this.tryFetchLocation();
             
-            if (location) {
-                this.cachedLocation = location;
-                // Cache for session
-                sessionStorage.setItem('lexigoLocation', JSON.stringify(location));
-                this.displayLocation(location);
+            if (ipLocation) {
+                this.cachedLocation = ipLocation;
+                sessionStorage.setItem('lexigoLocation', JSON.stringify(ipLocation));
+                this.displayLocation(ipLocation);
             } else {
                 throw new Error('Failed to fetch location');
             }
@@ -70,6 +78,80 @@ class LocationTracker {
             clearTimeout(timeoutId);
             throw error;
         }
+    }
+
+    getBrowserLocation(timeout = 8000) {
+        return new Promise((resolve) => {
+            if (!navigator.geolocation) {
+                resolve(null);
+                return;
+            }
+
+            let settled = false;
+
+            const onSuccess = async (position) => {
+                if (settled) return;
+                settled = true;
+
+                const { latitude, longitude } = position.coords;
+
+                // Try to reverse-geocode lat/lon to city/country
+                const geo = await this.reverseGeocode(latitude, longitude).catch(() => null);
+                if (geo) {
+                    resolve(geo);
+                } else {
+                    resolve({
+                        city: null,
+                        country: null,
+                        countryCode: null,
+                        region: null,
+                        flag: '📍'
+                    });
+                }
+            };
+
+            const onError = () => {
+                if (settled) return;
+                settled = true;
+                resolve(null);
+            };
+
+            try {
+                navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+                    enableHighAccuracy: true,
+                    timeout,
+                    maximumAge: 0
+                });
+            } catch (e) {
+                resolve(null);
+            }
+        });
+    }
+
+    async reverseGeocode(lat, lon) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=10&addressdetails=1`;
+        const response = await this.fetchWithTimeout(url, 6000);
+        if (!response.ok) {
+            throw new Error('Reverse geocode failed');
+        }
+        const data = await response.json();
+        if (!data || !data.address) {
+            throw new Error('No address data');
+        }
+
+        const address = data.address;
+        const city = address.city || address.town || address.village || address.hamlet || null;
+        const country = address.country || null;
+        const countryCode = (address.country_code || '').toUpperCase() || null;
+        const region = address.state || address.county || null;
+
+        return {
+            city,
+            country,
+            countryCode,
+            region,
+            flag: this.getCountryFlag(countryCode)
+        };
     }
 
     async tryFetchLocation() {
@@ -150,27 +232,26 @@ class LocationTracker {
     displayLocation(location) {
         if (!this.locationElement || !location) return;
 
-        const { city, country, flag, region } = location;
+        const { city, country, region } = location;
         
-        // Create a nice display
-        let locationText = '';
+        // Clean, text-only location (no emojis)
+        let mainLabel = '';
         let fullLocation = '';
         
         if (city && country) {
-            // Show city, country with flag
-            locationText = `${flag || '📍'} ${city}, ${country}`;
+            mainLabel = `${city}, ${country}`;
             fullLocation = `${city}${region ? ', ' + region : ''}, ${country}`;
         } else if (country) {
-            locationText = `${flag || '📍'} ${country}`;
+            mainLabel = country;
             fullLocation = country;
         } else {
-            locationText = '🌍 Global';
+            mainLabel = 'Location';
             fullLocation = 'Location';
         }
 
         this.locationElement.innerHTML = `
             <i class="fas fa-map-marker-alt"></i>
-            <span class="location-text">${this.escapeHtml(locationText)}</span>
+            <span class="location-text">${this.escapeHtml(mainLabel)}</span>
         `;
         this.locationElement.title = `Searching from ${fullLocation}`;
         this.locationElement.classList.remove('loading');
@@ -185,26 +266,13 @@ class LocationTracker {
     displayFallback() {
         if (!this.locationElement) return;
         
-        // Try to get timezone as fallback
-        try {
-            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const parts = timezone.split('/');
-            const location = parts[parts.length - 1].replace(/_/g, ' ');
-            
-            this.locationElement.innerHTML = `
-                <i class="fas fa-map-marker-alt"></i>
-                <span class="location-text">🌍 ${this.escapeHtml(location)}</span>
-            `;
-            this.locationElement.title = `Timezone: ${timezone}`;
-            this.locationElement.classList.remove('loading');
-        } catch (e) {
-            this.locationElement.innerHTML = `
-                <i class="fas fa-map-marker-alt"></i>
-                <span class="location-text">🌍 Global</span>
-            `;
-            this.locationElement.title = 'Location unavailable';
-            this.locationElement.classList.remove('loading');
-        }
+        // Generic, no-emoji fallback if everything fails
+        this.locationElement.innerHTML = `
+            <i class="fas fa-map-marker-alt"></i>
+            <span class="location-text">Location unavailable</span>
+        `;
+        this.locationElement.title = 'Location unavailable';
+        this.locationElement.classList.remove('loading');
     }
 
     // Method to refresh location
