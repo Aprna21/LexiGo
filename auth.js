@@ -1,7 +1,7 @@
 class LexiGoAuth {
     constructor() {
         this.statusTimeout = null;
-        this.init();   
+        this.init();    
     }
 
     init() {
